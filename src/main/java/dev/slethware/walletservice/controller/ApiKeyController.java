@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/keys")
+@RequestMapping("/api/v1/keys")
 @RequiredArgsConstructor
 @Tag(name = "API Key Management", description = "Endpoints for managing API keys")
 @SecurityRequirement(name = "bearerAuth")

@@ -10,7 +10,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -35,9 +34,7 @@ public class PaystackServiceImpl implements PaystackService {
     }
 
     @Override
-    public String initializeTransaction(String email, BigDecimal amount, String reference) {
-        long amountInKobo = amount.multiply(BigDecimal.valueOf(100)).longValue();
-
+    public String initializeTransaction(String email, Long amountInKobo, String reference) {
         Map<String, Object> requestBody = Map.of(
                 "email", email,
                 "amount", amountInKobo,
@@ -69,7 +66,7 @@ public class PaystackServiceImpl implements PaystackService {
     }
 
     @Override
-    public boolean verifyWebhookSignature(String payload, String signature) { // Changed input to String
+    public boolean verifyWebhookSignature(String payload, String signature) {
         SecretKeySpec key = new SecretKeySpec(paystackSecretKey.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
         Mac mac;
         try {
@@ -90,6 +87,6 @@ public class PaystackServiceImpl implements PaystackService {
 
     @Override
     public String generateReference() {
-        return "WLLT_" + System.currentTimeMillis();
+        return "DEP_" + System.currentTimeMillis();
     }
 }

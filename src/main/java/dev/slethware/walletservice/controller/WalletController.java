@@ -24,7 +24,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/wallet")
+@RequestMapping("/api/v1/wallet")
 @RequiredArgsConstructor
 @Tag(name = "Wallet Management", description = "Endpoints for wallet operations")
 public class WalletController {
@@ -37,7 +37,7 @@ public class WalletController {
     @PreAuthorize("hasAuthority('PERMISSION_DEPOSIT')")
     @Operation(
             summary = "Initiate Deposit",
-            description = "Initialize a Paystack deposit transaction. Requires JWT or API key with 'deposit' permission."
+            description = "Initialize a Paystack deposit transaction. Amount is in kobo. Requires JWT or API key with 'deposit' permission."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Deposit initiated successfully"),
@@ -73,7 +73,7 @@ public class WalletController {
     @PreAuthorize("hasAuthority('PERMISSION_READ')")
     @Operation(
             summary = "Get Transaction Status",
-            description = "Check the status of any transaction (Deposit, Transfer, Withdrawal). Requires JWT or API key with 'read' permission." // Updated Description
+            description = "Check the status of any transaction (Deposit, Transfer, Withdrawal). Amount is in kobo. Requires JWT or API key with 'read' permission."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Status retrieved successfully"),
@@ -92,7 +92,7 @@ public class WalletController {
     @PreAuthorize("hasAuthority('PERMISSION_READ')")
     @Operation(
             summary = "Get Wallet Balance",
-            description = "Retrieve current wallet balance. Requires JWT or API key with 'read' permission."
+            description = "Retrieve current wallet balance in kobo. Requires JWT or API key with 'read' permission."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Balance retrieved successfully"),
@@ -110,7 +110,7 @@ public class WalletController {
     @PreAuthorize("hasAuthority('PERMISSION_TRANSFER')")
     @Operation(
             summary = "Transfer Funds",
-            description = "Transfer funds to another wallet. Requires JWT or API key with 'transfer' permission."
+            description = "Transfer funds to another wallet. Amount is in kobo. Requires JWT or API key with 'transfer' permission."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Transfer completed successfully"),
@@ -128,7 +128,7 @@ public class WalletController {
     @PreAuthorize("hasAuthority('PERMISSION_WITHDRAW')")
     @Operation(
             summary = "Withdraw Funds",
-            description = "Withdraw funds from wallet. Only accessible via JWT (no API key access). Minimum withdrawal is 50 NGN."
+            description = "Withdraw funds from wallet. Amount is in kobo. Only accessible via JWT (no API key access). Minimum withdrawal is 5000 kobo (50 NGN)."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Withdrawal completed successfully"),
@@ -147,7 +147,7 @@ public class WalletController {
     @PreAuthorize("hasAuthority('PERMISSION_READ')")
     @Operation(
             summary = "Get Transaction History",
-            description = "Retrieve paginated transaction history for the current user's wallet. Requires JWT or API key with 'read' permission."
+            description = "Retrieve paginated transaction history for the current user's wallet. Amounts are in kobo. Requires JWT or API key with 'read' permission."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Transactions retrieved successfully"),

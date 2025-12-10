@@ -24,7 +24,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,7 +71,7 @@ public class WalletServiceImpl implements WalletService {
         Transaction transaction = Transaction.builder()
                 .wallet(wallet)
                 .type(TransactionType.DEPOSIT)
-                .amount(request.getAmount().multiply(BigDecimal.valueOf(100)).longValue())
+                .amount(request.getAmount())
                 .status(TransactionStatus.PENDING)
                 .reference(reference)
                 .metadata(new HashMap<>())
@@ -161,7 +160,7 @@ public class WalletServiceImpl implements WalletService {
         DepositStatusResponse statusResponse = DepositStatusResponse.builder()
                 .reference(transaction.getReference())
                 .status(transaction.getStatus().name().toLowerCase())
-                .amount(transaction.getAmountInNaira())
+                .amount(transaction.getAmount())
                 .build();
 
         return ApiResponse.<DepositStatusResponse>builder()
@@ -178,7 +177,7 @@ public class WalletServiceImpl implements WalletService {
         Wallet wallet = getWalletByUser(currentUser);
 
         BalanceResponse balanceResponse = BalanceResponse.builder()
-                .balance(wallet.getBalanceInNaira())
+                .balance(wallet.getBalance())
                 .walletNumber(wallet.getWalletNumber())
                 .build();
 
@@ -204,7 +203,7 @@ public class WalletServiceImpl implements WalletService {
             throw new BadRequestException("Cannot transfer to your own wallet");
         }
 
-        long amountInKobo = request.getAmount().multiply(BigDecimal.valueOf(100)).longValue();
+        long amountInKobo = request.getAmount();
 
         if (senderWallet.getBalance() < amountInKobo) {
             throw new BadRequestException("Insufficient balance");
@@ -263,7 +262,7 @@ public class WalletServiceImpl implements WalletService {
         Wallet wallet = walletRepository.findByUserIdForUpdate(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
-        long amountInKobo = request.getAmount().multiply(BigDecimal.valueOf(100)).longValue();
+        long amountInKobo = request.getAmount();
 
         if (wallet.getBalance() < amountInKobo) {
             throw new BadRequestException("Insufficient balance");
@@ -311,7 +310,7 @@ public class WalletServiceImpl implements WalletService {
 
         Page<TransactionResponse> transactionResponses = transactions.map(t -> TransactionResponse.builder()
                 .type(t.getType().name().toLowerCase())
-                .amount(t.getAmountInNaira())
+                .amount(t.getAmount())
                 .status(t.getStatus().name().toLowerCase())
                 .reference(t.getReference())
                 .createdAt(t.getCreatedAt())

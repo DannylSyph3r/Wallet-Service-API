@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -14,5 +12,5 @@ import java.math.BigDecimal;
 public class DepositStatusResponse {
     private String reference;
     private String status;
-    private BigDecimal amount;
+    private Long amount;
 }
