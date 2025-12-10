@@ -5,6 +5,7 @@ import dev.slethware.walletservice.exception.ResourceNotFoundException;
 import dev.slethware.walletservice.exception.UnauthorizedException;
 import dev.slethware.walletservice.models.dtos.request.CreateApiKeyRequest;
 import dev.slethware.walletservice.models.dtos.request.RolloverApiKeyRequest;
+import dev.slethware.walletservice.models.dtos.response.ApiKeyListResponse;
 import dev.slethware.walletservice.models.dtos.response.ApiKeyResponse;
 import dev.slethware.walletservice.models.dtos.response.ApiResponse;
 import dev.slethware.walletservice.models.entity.ApiKey;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -143,6 +145,87 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                 .statusCode(200)
                 .message("API key rolled over successfully")
                 .data(apiKeyResponse)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<List<ApiKeyListResponse>> listApiKeys() {
+        User currentUser = getCurrentUser();
+
+        List<ApiKey> apiKeys = apiKeyRepository.findByUserIdAndRevokedFalse(currentUser.getId());
+
+        List<ApiKeyListResponse> responses = apiKeys.stream()
+                .map(key -> ApiKeyListResponse.builder()
+                        .id(key.getId())
+                        .name(key.getName())
+                        .permissions(key.getPermissions())
+                        .expiresAt(key.getExpiresAt())
+                        .revoked(key.isRevoked())
+                        .createdAt(key.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponse.<List<ApiKeyListResponse>>builder()
+                .status("success")
+                .statusCode(200)
+                .message("API keys retrieved successfully")
+                .data(responses)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<ApiKeyListResponse> getApiKey(UUID keyId) {
+        User currentUser = getCurrentUser();
+
+        ApiKey apiKey = apiKeyRepository.findById(keyId)
+                .orElseThrow(() -> new ResourceNotFoundException("API key not found"));
+
+        if (!apiKey.getUser().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("You do not have permission to view this key");
+        }
+
+        ApiKeyListResponse response = ApiKeyListResponse.builder()
+                .id(apiKey.getId())
+                .name(apiKey.getName())
+                .permissions(apiKey.getPermissions())
+                .expiresAt(apiKey.getExpiresAt())
+                .revoked(apiKey.isRevoked())
+                .createdAt(apiKey.getCreatedAt())
+                .build();
+
+        return ApiResponse.<ApiKeyListResponse>builder()
+                .status("success")
+                .statusCode(200)
+                .message("API key retrieved successfully")
+                .data(response)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> revokeApiKey(UUID keyId) {
+        User currentUser = getCurrentUser();
+
+        ApiKey apiKey = apiKeyRepository.findById(keyId)
+                .orElseThrow(() -> new ResourceNotFoundException("API key not found"));
+
+        if (!apiKey.getUser().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("You do not have permission to revoke this key");
+        }
+
+        if (apiKey.isRevoked()) {
+            throw new BadRequestException("API key is already revoked");
+        }
+
+        apiKey.setRevoked(true);
+        apiKeyRepository.save(apiKey);
+
+        log.info("Revoked API key {} for user: {}", keyId, currentUser.getEmail());
+
+        return ApiResponse.<Void>builder()
+                .status("success")
+                .statusCode(200)
+                .message("API key revoked successfully")
                 .build();
     }
 

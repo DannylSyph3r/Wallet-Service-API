@@ -4,6 +4,7 @@ import dev.slethware.walletservice.exception.BadRequestException;
 import dev.slethware.walletservice.exception.ResourceNotFoundException;
 import dev.slethware.walletservice.models.dtos.request.DepositRequest;
 import dev.slethware.walletservice.models.dtos.request.TransferRequest;
+import dev.slethware.walletservice.models.dtos.request.WithdrawRequest;
 import dev.slethware.walletservice.models.dtos.response.*;
 import dev.slethware.walletservice.models.entity.Transaction;
 import dev.slethware.walletservice.models.entity.User;
@@ -118,7 +119,7 @@ public class WalletServiceImpl implements WalletService {
         String status = (String) data.get("status");
         Long amountInKobo = ((Number) data.get("amount")).longValue();
 
-        Transaction transaction = transactionRepository.findByReference(reference)
+        Transaction transaction = transactionRepository.findByReferenceForUpdate(reference)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
 
         if (transaction.getStatus() != TransactionStatus.PENDING) {
@@ -190,9 +191,10 @@ public class WalletServiceImpl implements WalletService {
     @Transactional
     public ApiResponse<TransferResponse> transfer(TransferRequest request) {
         User currentUser = getCurrentUser();
-        Wallet senderWallet = getWalletByUser(currentUser);
+        Wallet senderWallet = walletRepository.findByUserIdForUpdate(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
-        Wallet recipientWallet = walletRepository.findByWalletNumber(request.getWalletNumber())
+        Wallet recipientWallet = walletRepository.findByWalletNumberForUpdate(request.getWalletNumber())
                 .orElseThrow(() -> new ResourceNotFoundException("Recipient wallet not found"));
 
         if (senderWallet.getId().equals(recipientWallet.getId())) {
@@ -247,6 +249,51 @@ public class WalletServiceImpl implements WalletService {
                 .statusCode(200)
                 .message("Transfer completed successfully")
                 .data(transferResponse)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<WithdrawResponse> withdraw(WithdrawRequest request) {
+        User currentUser = getCurrentUser();
+        Wallet wallet = walletRepository.findByUserIdForUpdate(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
+
+        long amountInKobo = request.getAmount().multiply(BigDecimal.valueOf(100)).longValue();
+
+        if (wallet.getBalance() < amountInKobo) {
+            throw new BadRequestException("Insufficient balance");
+        }
+
+        wallet.setBalance(wallet.getBalance() - amountInKobo);
+        walletRepository.save(wallet);
+
+        String reference = "WDR_" + System.currentTimeMillis();
+
+        Transaction transaction = Transaction.builder()
+                .wallet(wallet)
+                .type(TransactionType.WITHDRAWAL)
+                .amount(amountInKobo)
+                .status(TransactionStatus.SUCCESS)
+                .reference(reference)
+                .metadata(new HashMap<>())
+                .build();
+
+        transactionRepository.save(transaction);
+
+        log.info("Withdrawal completed: wallet {}, amount: {} kobo",
+                wallet.getWalletNumber(), amountInKobo);
+
+        WithdrawResponse withdrawResponse = WithdrawResponse.builder()
+                .status("success")
+                .message("Withdrawal completed")
+                .build();
+
+        return ApiResponse.<WithdrawResponse>builder()
+                .status("success")
+                .statusCode(200)
+                .message("Withdrawal completed successfully")
+                .data(withdrawResponse)
                 .build();
     }
 
