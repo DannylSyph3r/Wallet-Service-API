@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransferResponse {
+    private String reference;
     private String status;
     private String message;
 }

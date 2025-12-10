@@ -11,11 +11,10 @@ import dev.slethware.walletservice.models.dtos.response.ApiResponse;
 import dev.slethware.walletservice.models.entity.ApiKey;
 import dev.slethware.walletservice.models.entity.User;
 import dev.slethware.walletservice.repository.ApiKeyRepository;
-import dev.slethware.walletservice.repository.UserRepository;
+import dev.slethware.walletservice.service.user.UserService;
 import dev.slethware.walletservice.utility.ApiKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +31,6 @@ import java.util.stream.Collectors;
 public class ApiKeyServiceImpl implements ApiKeyService {
 
     private final ApiKeyRepository apiKeyRepository;
-    private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     private static final List<String> VALID_PERMISSIONS = Arrays.asList("deposit", "transfer", "read");
@@ -41,7 +39,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     @Override
     @Transactional
     public ApiResponse<ApiKeyResponse> createApiKey(CreateApiKeyRequest request) {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
 
         request.getPermissions().forEach(permission -> {
             if (!VALID_PERMISSIONS.contains(permission)) {
@@ -90,7 +88,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     @Override
     @Transactional
     public ApiResponse<ApiKeyResponse> rolloverApiKey(RolloverApiKeyRequest request) {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
 
         UUID expiredKeyId;
         try {
@@ -154,7 +152,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
     @Override
     public ApiResponse<List<ApiKeyListResponse>> listApiKeys() {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
 
         List<ApiKey> apiKeys = apiKeyRepository.findByUserIdAndRevokedFalse(currentUser.getId());
 
@@ -179,7 +177,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
     @Override
     public ApiResponse<ApiKeyListResponse> getApiKey(UUID keyId) {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
 
         ApiKey apiKey = apiKeyRepository.findById(keyId)
                 .orElseThrow(() -> new ResourceNotFoundException("API key not found"));
@@ -208,7 +206,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     @Override
     @Transactional
     public ApiResponse<Void> revokeApiKey(UUID keyId) {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
 
         ApiKey apiKey = apiKeyRepository.findById(keyId)
                 .orElseThrow(() -> new ResourceNotFoundException("API key not found"));
@@ -275,11 +273,5 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             case "1Y" -> now.plusYears(1);
             default -> throw new BadRequestException("Invalid expiry format");
         };
-    }
-
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 }

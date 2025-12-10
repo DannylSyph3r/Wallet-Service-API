@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class WithdrawResponse {
+    private String reference;
     private String status;
     private String message;
 }

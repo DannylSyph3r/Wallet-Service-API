@@ -13,15 +13,14 @@ import dev.slethware.walletservice.models.entity.Wallet;
 import dev.slethware.walletservice.models.enums.TransactionStatus;
 import dev.slethware.walletservice.models.enums.TransactionType;
 import dev.slethware.walletservice.repository.TransactionRepository;
-import dev.slethware.walletservice.repository.UserRepository;
 import dev.slethware.walletservice.repository.WalletRepository;
 import dev.slethware.walletservice.service.paystack.PaystackService;
+import dev.slethware.walletservice.service.user.UserService;
 import dev.slethware.walletservice.utility.WalletNumberGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,8 +35,8 @@ public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-    private final UserRepository userRepository;
     private final PaystackService paystackService;
+    private final Gson gson;
 
     @Override
     @Transactional
@@ -65,7 +64,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public ApiResponse<DepositResponse> initiateDeposit(DepositRequest request) {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
         Wallet wallet = getWalletByUser(currentUser);
 
         String reference = paystackService.generateReference();
@@ -107,8 +106,7 @@ public class WalletServiceImpl implements WalletService {
             throw new BadRequestException("Invalid webhook signature");
         }
 
-        com.google.gson.Gson gson = new com.google.gson.Gson();
-        java.util.Map<String, Object> payloadMap = gson.fromJson(payload, java.util.Map.class);
+        Map<String, Object> payloadMap = gson.fromJson(payload, Map.class);
 
         String event = (String) payloadMap.get("event");
 
@@ -118,7 +116,7 @@ public class WalletServiceImpl implements WalletService {
         }
 
         @SuppressWarnings("unchecked")
-        java.util.Map<String, Object> data = (java.util.Map<String, Object>) payloadMap.get("data");
+        Map<String, Object> data = (Map<String, Object>) payloadMap.get("data");
         String reference = (String) data.get("reference");
         String status = (String) data.get("status");
         Long amountInKobo = ((Number) data.get("amount")).longValue();
@@ -176,7 +174,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public ApiResponse<BalanceResponse> getBalance() {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
         Wallet wallet = getWalletByUser(currentUser);
 
         BalanceResponse balanceResponse = BalanceResponse.builder()
@@ -195,7 +193,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public ApiResponse<TransferResponse> transfer(TransferRequest request) {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
         Wallet senderWallet = walletRepository.findByUserIdForUpdate(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
@@ -245,6 +243,7 @@ public class WalletServiceImpl implements WalletService {
                 senderWallet.getWalletNumber(), recipientWallet.getWalletNumber(), amountInKobo);
 
         TransferResponse transferResponse = TransferResponse.builder()
+                .reference(reference)
                 .status("success")
                 .message("Transfer completed")
                 .build();
@@ -260,7 +259,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public ApiResponse<WithdrawResponse> withdraw(WithdrawRequest request) {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
         Wallet wallet = walletRepository.findByUserIdForUpdate(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
@@ -290,6 +289,7 @@ public class WalletServiceImpl implements WalletService {
                 wallet.getWalletNumber(), amountInKobo);
 
         WithdrawResponse withdrawResponse = WithdrawResponse.builder()
+                .reference(reference)
                 .status("success")
                 .message("Withdrawal completed")
                 .build();
@@ -304,7 +304,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public ApiResponse<Page<TransactionResponse>> getTransactions(Pageable pageable) {
-        User currentUser = getCurrentUser();
+        User currentUser = UserService.getLoggedInUser();
         Wallet wallet = getWalletByUser(currentUser);
 
         Page<Transaction> transactions = transactionRepository.findByWalletIdOrderByCreatedAtDesc(wallet.getId(), pageable);
@@ -323,12 +323,6 @@ public class WalletServiceImpl implements WalletService {
                 .message("Transactions retrieved successfully")
                 .data(transactionResponses)
                 .build();
-    }
-
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     private Wallet getWalletByUser(User user) {
