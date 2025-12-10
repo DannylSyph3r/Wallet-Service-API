@@ -177,6 +177,7 @@ public class WalletServiceImpl implements WalletService {
 
         BalanceResponse balanceResponse = BalanceResponse.builder()
                 .balance(wallet.getBalanceInNaira())
+                .walletNumber(wallet.getWalletNumber())
                 .build();
 
         return ApiResponse.<BalanceResponse>builder()
