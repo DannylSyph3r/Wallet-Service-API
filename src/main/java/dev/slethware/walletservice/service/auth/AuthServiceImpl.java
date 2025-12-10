@@ -173,7 +173,7 @@ public class AuthServiceImpl implements AuthService {
                         return savedUser;
                     });
 
-            return generateAuthResponse(user, "Google OAuth authentication successful");
+            return generateAuthResponse(user, "Authentication successful");
 
         } catch (IOException e) {
             log.error("Failed to process Google OAuth callback: {}", e.getMessage());

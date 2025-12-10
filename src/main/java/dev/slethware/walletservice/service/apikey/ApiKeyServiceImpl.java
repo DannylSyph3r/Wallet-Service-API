@@ -106,6 +106,10 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             throw new UnauthorizedException("You do not have permission to rollover this key");
         }
 
+        if (expiredKey.isRevoked()) {
+            throw new BadRequestException("Cannot rollover a revoked key");
+        }
+
         if (!expiredKey.isExpired()) {
             throw new BadRequestException("Key must be expired to rollover");
         }
