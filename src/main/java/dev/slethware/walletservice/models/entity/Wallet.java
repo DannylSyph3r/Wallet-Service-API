@@ -8,7 +8,6 @@ import java.math.RoundingMode;
 
 @Entity
 @Table(name = "wallets", indexes = {
-        @Index(name = "idx_user_id", columnList = "user_id", unique = true),
         @Index(name = "idx_wallet_number", columnList = "wallet_number", unique = true)
 })
 @Getter

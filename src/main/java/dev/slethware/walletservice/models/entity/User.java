@@ -3,10 +3,11 @@ package dev.slethware.walletservice.models.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 @Entity
 @Table(name = "users", indexes = {
@@ -34,27 +35,18 @@ public class User extends Auditable implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
+        // Grant all permissions to standard users.
+        return List.of(
+                new SimpleGrantedAuthority("PERMISSION_DEPOSIT"),
+                new SimpleGrantedAuthority("PERMISSION_TRANSFER"),
+                new SimpleGrantedAuthority("PERMISSION_READ"),
+                new SimpleGrantedAuthority("PERMISSION_WITHDRAW") // Withdraw permission exclusive only to Users
+        );
     }
 
     @Override
     public String getUsername() {
         return email;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
     }
 
     @Override

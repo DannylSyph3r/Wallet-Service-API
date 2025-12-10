@@ -69,7 +69,7 @@ public class PaystackServiceImpl implements PaystackService {
     }
 
     @Override
-    public boolean verifyWebhookSignature(Map<String, Object> payload, String signature) {
+    public boolean verifyWebhookSignature(String payload, String signature) { // Changed input to String
         SecretKeySpec key = new SecretKeySpec(paystackSecretKey.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
         Mac mac;
         try {
@@ -79,7 +79,7 @@ public class PaystackServiceImpl implements PaystackService {
             throw new InternalServerException("Failed to verify Paystack webhook", e);
         }
 
-        byte[] bytes = mac.doFinal(gson.toJson(payload).getBytes(StandardCharsets.UTF_8));
+        byte[] bytes = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
         StringBuilder result = new StringBuilder();
         for (byte b : bytes) {
             result.append(String.format("%02x", b));

@@ -1,5 +1,6 @@
 package dev.slethware.walletservice.service.wallet;
 
+import com.google.gson.Gson;
 import dev.slethware.walletservice.exception.BadRequestException;
 import dev.slethware.walletservice.exception.ResourceNotFoundException;
 import dev.slethware.walletservice.models.dtos.request.DepositRequest;
@@ -101,12 +102,15 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public void processWebhook(Map<String, Object> payload, String signature) {
+    public void processWebhook(String payload, String signature) {
         if (!paystackService.verifyWebhookSignature(payload, signature)) {
             throw new BadRequestException("Invalid webhook signature");
         }
 
-        String event = (String) payload.get("event");
+        com.google.gson.Gson gson = new com.google.gson.Gson();
+        java.util.Map<String, Object> payloadMap = gson.fromJson(payload, java.util.Map.class);
+
+        String event = (String) payloadMap.get("event");
 
         if (!"charge.success".equals(event)) {
             log.info("Ignoring webhook event: {}", event);
@@ -114,7 +118,7 @@ public class WalletServiceImpl implements WalletService {
         }
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> data = (Map<String, Object>) payload.get("data");
+        java.util.Map<String, Object> data = (java.util.Map<String, Object>) payloadMap.get("data");
         String reference = (String) data.get("reference");
         String status = (String) data.get("status");
         Long amountInKobo = ((Number) data.get("amount")).longValue();
@@ -165,7 +169,7 @@ public class WalletServiceImpl implements WalletService {
         return ApiResponse.<DepositStatusResponse>builder()
                 .status("success")
                 .statusCode(200)
-                .message("Deposit status retrieved successfully")
+                .message("Transaction status retrieved successfully")
                 .data(statusResponse)
                 .build();
     }

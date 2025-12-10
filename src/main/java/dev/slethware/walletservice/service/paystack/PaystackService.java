@@ -5,6 +5,6 @@ import java.util.Map;
 
 public interface PaystackService {
     String initializeTransaction(String email, BigDecimal amount, String reference);
-    boolean verifyWebhookSignature(Map<String, Object> payload, String signature);
+    boolean verifyWebhookSignature(String payload, String signature);
     String generateReference();
 }

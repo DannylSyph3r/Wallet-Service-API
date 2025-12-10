@@ -34,7 +34,7 @@ public class WalletController {
     @PostMapping("/deposit")
     @SecurityRequirement(name = "bearerAuth")
     @SecurityRequirement(name = "apiKey")
-    @PreAuthorize("hasAuthority('PERMISSION_DEPOSIT') or authentication.principal instanceof T(dev.slethware.walletservice.models.entity.User)")
+    @PreAuthorize("hasAuthority('PERMISSION_DEPOSIT')")
     @Operation(
             summary = "Initiate Deposit",
             description = "Initialize a Paystack deposit transaction. Requires JWT or API key with 'deposit' permission."
@@ -59,7 +59,7 @@ public class WalletController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid signature")
     })
     public ResponseEntity<Map<String, Boolean>> paystackWebhook(
-            @RequestBody Map<String, Object> payload,
+            @RequestBody String payload,
             @RequestHeader("x-paystack-signature") String signature) {
 
         log.info("Received Paystack webhook");
@@ -67,13 +67,13 @@ public class WalletController {
         return ResponseEntity.ok(Map.of("status", true));
     }
 
-    @GetMapping("/deposit/{reference}/status")
+    @GetMapping("/transaction/{reference}/status")
     @SecurityRequirement(name = "bearerAuth")
     @SecurityRequirement(name = "apiKey")
-    @PreAuthorize("hasAuthority('PERMISSION_READ') or authentication.principal instanceof T(dev.slethware.walletservice.models.entity.User)")
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     @Operation(
-            summary = "Get Deposit Status",
-            description = "Check the status of a deposit transaction. Requires JWT or API key with 'read' permission."
+            summary = "Get Transaction Status",
+            description = "Check the status of any transaction (Deposit, Transfer, Withdrawal). Requires JWT or API key with 'read' permission." // Updated Description
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Status retrieved successfully"),
@@ -81,7 +81,7 @@ public class WalletController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Permission denied"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Transaction not found")
     })
-    public ResponseEntity<ApiResponse<DepositStatusResponse>> getDepositStatus(
+    public ResponseEntity<ApiResponse<DepositStatusResponse>> getTransactionStatus(
             @Parameter(description = "Transaction reference") @PathVariable String reference) {
         return ResponseEntity.ok(walletService.getDepositStatus(reference));
     }
@@ -89,7 +89,7 @@ public class WalletController {
     @GetMapping("/balance")
     @SecurityRequirement(name = "bearerAuth")
     @SecurityRequirement(name = "apiKey")
-    @PreAuthorize("hasAuthority('PERMISSION_READ') or authentication.principal instanceof T(dev.slethware.walletservice.models.entity.User)")
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     @Operation(
             summary = "Get Wallet Balance",
             description = "Retrieve current wallet balance. Requires JWT or API key with 'read' permission."
@@ -107,7 +107,7 @@ public class WalletController {
     @PostMapping("/transfer")
     @SecurityRequirement(name = "bearerAuth")
     @SecurityRequirement(name = "apiKey")
-    @PreAuthorize("hasAuthority('PERMISSION_TRANSFER') or authentication.principal instanceof T(dev.slethware.walletservice.models.entity.User)")
+    @PreAuthorize("hasAuthority('PERMISSION_TRANSFER')")
     @Operation(
             summary = "Transfer Funds",
             description = "Transfer funds to another wallet. Requires JWT or API key with 'transfer' permission."
@@ -125,7 +125,7 @@ public class WalletController {
 
     @PostMapping("/withdraw")
     @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("authentication.principal instanceof T(dev.slethware.walletservice.models.entity.User)")
+    @PreAuthorize("hasAuthority('PERMISSION_WITHDRAW')")
     @Operation(
             summary = "Withdraw Funds",
             description = "Withdraw funds from wallet. Only accessible via JWT (no API key access). Minimum withdrawal is 50 NGN."
@@ -144,7 +144,7 @@ public class WalletController {
     @GetMapping("/transactions")
     @SecurityRequirement(name = "bearerAuth")
     @SecurityRequirement(name = "apiKey")
-    @PreAuthorize("hasAuthority('PERMISSION_READ') or authentication.principal instanceof T(dev.slethware.walletservice.models.entity.User)")
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     @Operation(
             summary = "Get Transaction History",
             description = "Retrieve paginated transaction history for the current user's wallet. Requires JWT or API key with 'read' permission."

@@ -13,7 +13,7 @@ import java.util.Map;
 public interface WalletService {
     void createWalletForUser(User user);
     ApiResponse<DepositResponse> initiateDeposit(DepositRequest request);
-    void processWebhook(Map<String, Object> payload, String signature);
+    void processWebhook(String payload, String signature);
     ApiResponse<DepositStatusResponse> getDepositStatus(String reference);
     ApiResponse<BalanceResponse> getBalance();
     ApiResponse<TransferResponse> transfer(TransferRequest request);
