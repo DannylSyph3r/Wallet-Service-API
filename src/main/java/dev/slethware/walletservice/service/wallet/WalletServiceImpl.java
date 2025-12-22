@@ -71,7 +71,7 @@ public class WalletServiceImpl implements WalletService {
         Transaction transaction = Transaction.builder()
                 .wallet(wallet)
                 .type(TransactionType.DEPOSIT)
-                .amount(request.getAmount())
+                .amount(request.amount())
                 .status(TransactionStatus.PENDING)
                 .reference(reference)
                 .metadata(new HashMap<>())
@@ -81,7 +81,7 @@ public class WalletServiceImpl implements WalletService {
 
         String authorizationUrl = paystackService.initializeTransaction(
                 currentUser.getEmail(),
-                request.getAmount(),
+                request.amount(),
                 reference
         );
 
@@ -196,14 +196,14 @@ public class WalletServiceImpl implements WalletService {
         Wallet senderWallet = walletRepository.findByUserIdForUpdate(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
-        Wallet recipientWallet = walletRepository.findByWalletNumberForUpdate(request.getWalletNumber())
+        Wallet recipientWallet = walletRepository.findByWalletNumberForUpdate(request.walletNumber())
                 .orElseThrow(() -> new ResourceNotFoundException("Recipient wallet not found"));
 
         if (senderWallet.getId().equals(recipientWallet.getId())) {
             throw new BadRequestException("Cannot transfer to your own wallet");
         }
 
-        long amountInKobo = request.getAmount();
+        long amountInKobo = request.amount();
 
         if (senderWallet.getBalance() < amountInKobo) {
             throw new BadRequestException("Insufficient balance");
@@ -262,7 +262,7 @@ public class WalletServiceImpl implements WalletService {
         Wallet wallet = walletRepository.findByUserIdForUpdate(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
-        long amountInKobo = request.getAmount();
+        long amountInKobo = request.amount();
 
         if (wallet.getBalance() < amountInKobo) {
             throw new BadRequestException("Insufficient balance");

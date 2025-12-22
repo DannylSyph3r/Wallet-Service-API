@@ -62,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
 
         GoogleIdToken idToken;
         try {
-            idToken = verifier.verify(request.getIdToken());
+            idToken = verifier.verify(request.idToken());
         } catch (Exception e) {
             log.error("Google Token Verification Failed: {}", e.getMessage());
             throw new BadRequestException("Invalid Google token");

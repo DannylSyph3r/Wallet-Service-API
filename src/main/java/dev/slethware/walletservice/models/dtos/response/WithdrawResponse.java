@@ -1,16 +1,10 @@
 package dev.slethware.walletservice.models.dtos.response;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-public class WithdrawResponse {
-    private String reference;
-    private String status;
-    private String message;
-}
+public record WithdrawResponse(
+        String reference,
+        String status,
+        String message
+) {}

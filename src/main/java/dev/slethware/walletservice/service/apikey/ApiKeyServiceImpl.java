@@ -41,7 +41,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     public ApiResponse<ApiKeyResponse> createApiKey(CreateApiKeyRequest request) {
         User currentUser = UserService.getLoggedInUser();
 
-        request.getPermissions().forEach(permission -> {
+        request.permissions().forEach(permission -> {
             if (!VALID_PERMISSIONS.contains(permission)) {
                 throw new BadRequestException("Invalid permission: " + permission);
             }
@@ -57,13 +57,13 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         String rawApiKey = ApiKeyGenerator.generate();
         String keyHash = passwordEncoder.encode(rawApiKey);
 
-        LocalDateTime expiresAt = calculateExpiry(request.getExpiry());
+        LocalDateTime expiresAt = calculateExpiry(request.expiry());
 
         ApiKey apiKey = ApiKey.builder()
                 .user(currentUser)
-                .name(request.getName())
+                .name(request.name())
                 .keyHash(keyHash)
-                .permissions(request.getPermissions())
+                .permissions(request.permissions())
                 .expiresAt(expiresAt)
                 .revoked(false)
                 .build();
@@ -92,7 +92,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
         UUID expiredKeyId;
         try {
-            expiredKeyId = UUID.fromString(request.getExpiredKeyId());
+            expiredKeyId = UUID.fromString(request.expiredKeyId());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid key ID format");
         }
@@ -122,7 +122,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         String rawApiKey = ApiKeyGenerator.generate();
         String keyHash = passwordEncoder.encode(rawApiKey);
 
-        LocalDateTime expiresAt = calculateExpiry(request.getExpiry());
+        LocalDateTime expiresAt = calculateExpiry(request.expiry());
 
         ApiKey newApiKey = ApiKey.builder()
                 .user(currentUser)
